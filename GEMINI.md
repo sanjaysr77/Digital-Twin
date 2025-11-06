@@ -1,0 +1,1 @@
+Now that you have given me the overall summary. I want you to create a new component whcih summarizes the precautions and another component of does and dont's

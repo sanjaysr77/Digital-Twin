@@ -4,6 +4,38 @@ const crypto = require('crypto');
 const { Client, TopicMessageSubmitTransaction } = require('@hashgraph/sdk');
 const PatientReport = require('../models/PatientReport');
 const { parseReport } = require('../utils/parseReport');
+const OpenAI = require('openai');
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+async function summarizeText(text) {
+  if (!text || text.trim() === '') return null; // Return null for empty or whitespace-only text
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo", // Or another suitable model
+      messages: [
+        { role: "system", content: "You are a helpful assistant that summarizes medical information concisely. If the text is too brief to summarize meaningfully, just return the original text." },
+        { role: "user", content: `Summarize the following medical text:
+
+${text}` }
+      ],
+      temperature: 0.7,
+      max_tokens: 300, // Increased for a more elaborated summary
+    });
+    const summary = completion.choices[0].message.content;
+    // If the summary is very short or seems unhelpful, return the original text
+    if (!summary || summary.split(' ').length < 5) { // Example: if summary is less than 5 words
+      return text;
+    }
+    return summary;
+  } catch (error) {
+    console.error("Error summarizing text with OpenAI:", error);
+    return text; // Return original text on error
+  }
+}
 
 async function computeFileSha256(filePath) {
   return new Promise((resolve, reject) => {
@@ -81,7 +113,24 @@ module.exports.getReportsByPatient = async (req, res) => {
     }
 
     const reports = await PatientReport.find({ patientId }).sort({ uploadedAt: -1 });
-    return res.json({ status: 'success', reports });
+
+    const reportsWithSummaries = await Promise.all(reports.map(async (report) => {
+      const parsedData = report.parsedData || {};
+      const combinedText = [
+        parsedData.diagnosis,
+        parsedData.riskLevel,
+        parsedData.remarks
+      ].filter(Boolean).join(' ');
+
+      const overallSummary = await summarizeText(combinedText);
+
+      return {
+        ...report.toObject(),
+        overallSummary,
+      };
+    }));
+
+    return res.json({ status: 'success', reports: reportsWithSummaries });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to fetch reports', details: err.message });
   }
