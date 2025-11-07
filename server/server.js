@@ -13,7 +13,9 @@ app.use(express.json());
 
 // Routes
 const reportRoutes = require('./routes/reportRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 app.use('/api/reports', reportRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health route
 app.get('/health', (req, res) => {

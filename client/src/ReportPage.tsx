@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import OverallSummary from './components/OverallSummary';
 import PrecautionsSummary from './components/PrecautionsSummary';
 import DosAndDontsSummary from './components/DosAndDontsSummary';
+import Chatbot from './components/Chatbot';
 
 interface ReportData {
   patientId: string;
@@ -21,7 +22,11 @@ interface ReportData {
 }
 
 const ReportPage: React.FC = () => {
-  const { patientId } = useParams<{ patientId: string }>();
+  const { patientId: routePatientId } = useParams<{ patientId: string }>();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const queryPatientId = searchParams.get('patientId') || undefined;
+  const patientId = routePatientId || queryPatientId;
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +68,16 @@ const ReportPage: React.FC = () => {
     return <div className="flex justify-center items-center h-screen text-xl text-red-500">Error: {error}</div>;
   }
 
+  if (!patientId) {
+    return (
+      <div className="container mx-auto p-4">
+        <h1 className="text-2xl font-semibold mb-4">Reports</h1>
+        <p className="mb-2">No patient selected.</p>
+        <p className="text-sm text-gray-600">Provide a patientId in the URL like <code>/reports/123</code> or <code>/reports?patientId=123</code>.</p>
+      </div>
+    );
+  }
+
   if (!report) {
     return <div className="flex justify-center items-center h-screen text-xl">No report found for patient ID: {patientId}</div>;
   }
@@ -74,6 +89,8 @@ const ReportPage: React.FC = () => {
       {report.overallSummary && <OverallSummary summary={report.overallSummary} />}
       {report.summarizedPrecautions && <PrecautionsSummary summary={report.summarizedPrecautions} />}
       {report.summarizedDosAndDonts && <DosAndDontsSummary summary={report.summarizedDosAndDonts} />}
+
+      <Chatbot summary={report.overallSummary || ''} />
     </div>
   );
 };
