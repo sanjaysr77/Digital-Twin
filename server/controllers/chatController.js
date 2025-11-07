@@ -38,3 +38,34 @@ module.exports.chatWithSummary = async (req, res) => {
     return res.status(500).json({ error: 'Failed to get chat response' });
   }
 };
+
+// POST /api/chat/insight
+// body: { summary: string, question: string }
+module.exports.chatInsight = async (req, res) => {
+  try {
+    const { summary, question } = req.body || {};
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OPENAI_API_KEY not configured on server' });
+    }
+    if (!summary || typeof summary !== 'string') {
+      return res.status(400).json({ error: 'summary is required' });
+    }
+    const userQ = typeof question === 'string' ? question : '';
+    const system = `You generate a single concise, thought‑provoking, medically responsible insight based strictly on the following report summary. Avoid advice outside the summary; avoid definitive diagnoses; prefer curiosity‑driven prompts or contextual nuances. Max 22 words.\n\nSUMMARY:\n${summary}`;
+
+    const completion = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: `Patient asked: ${userQ || 'N/A'}. Provide one sentence insight now:` },
+      ],
+      temperature: 0.7,
+    });
+
+    const insight = (completion.choices?.[0]?.message?.content || '').trim();
+    return res.json({ insight });
+  } catch (err) {
+    console.error('OpenAI insight error:', err?.response?.data || err.message);
+    return res.status(500).json({ error: 'Failed to get insight' });
+  }
+};

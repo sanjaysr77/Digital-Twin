@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useToast } from './ToastProvider';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -14,6 +15,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ summary }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const disabled = useMemo(() => !summary || loading, [summary, loading]);
+  const { show } = useToast();
 
   const sendMessage = async () => {
     const text = input.trim();
@@ -31,6 +33,21 @@ const Chatbot: React.FC<ChatbotProps> = ({ summary }) => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: { reply: string } = await res.json();
       setMessages([...nextMessages, { role: 'assistant', content: data.reply }]);
+
+      // Fire and forget: request a short insight for toast
+      fetch('http://localhost:3000/api/chat/insight', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ summary, question: text }),
+      })
+        .then(async (r) => (r.ok ? r.json() : Promise.reject(r.status)))
+        .then((j: { insight?: string }) => {
+          const msg = (j?.insight || '').trim();
+          if (msg) show({ title: 'Insight', description: msg, duration: 6000 });
+        })
+        .catch(() => {
+          // No-op: avoid breaking chat if insight fails
+        });
     } catch (e: any) {
       setMessages([...nextMessages, { role: 'assistant', content: 'Sorry, I could not process that request.' }]);
       console.error(e);
