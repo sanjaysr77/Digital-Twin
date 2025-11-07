@@ -123,10 +123,14 @@ module.exports.getReportsByPatient = async (req, res) => {
       ].filter(Boolean).join(' ');
 
       const overallSummary = await summarizeText(combinedText);
+      const summarizedPrecautions = await summarizeText(parsedData.precautions);
+      const summarizedDosAndDonts = await summarizeText(parsedData.dosAndDonts);
 
       return {
         ...report.toObject(),
         overallSummary,
+        summarizedPrecautions,
+        summarizedDosAndDonts,
       };
     }));
 

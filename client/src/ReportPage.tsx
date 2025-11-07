@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import OverallSummary from './components/OverallSummary';
+import PrecautionsSummary from './components/PrecautionsSummary';
+import DosAndDontsSummary from './components/DosAndDontsSummary';
 
 interface ReportData {
   patientId: string;
@@ -8,10 +10,14 @@ interface ReportData {
   age: number;
   gender: string;
   diagnosis: string;
-  riskLevel?: string; // Assuming riskLevel might be present
-  remarks?: string; // Assuming remarks might be present
+  riskLevel?: string;
+  remarks?: string;
+  precautions?: string;
+  dosAndDonts?: string;
   measurements: Array<{ date: string; value: number }>;
   overallSummary?: string;
+  summarizedPrecautions?: string;
+  summarizedDosAndDonts?: string;
 }
 
 const ReportPage: React.FC = () => {
@@ -65,19 +71,9 @@ const ReportPage: React.FC = () => {
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6 text-center">Patient Report: {report.name}</h1>
 
-      <div className="bg-white shadow-lg rounded-lg p-6 mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Overall Summary</h2>
-        {report.overallSummary ? (
-          <p className="text-lg">{report.overallSummary}</p>
-        ) : (
-          <>
-            {report.diagnosis && <p className="text-lg"><strong>Diagnosis:</strong> {report.diagnosis}</p>}
-            {report.riskLevel && <p className="text-lg"><strong>Risk Level:</strong> {report.riskLevel}</p>}
-            {report.remarks && <p className="text-lg"><strong>Remarks:</strong> {report.remarks}</p>}
-            {!report.diagnosis && !report.riskLevel && !report.remarks && <p className="text-lg">No summary or raw report details available.</p>}
-          </>
-        )}
-      </div>
+      {report.overallSummary && <OverallSummary summary={report.overallSummary} />}
+      {report.summarizedPrecautions && <PrecautionsSummary summary={report.summarizedPrecautions} />}
+      {report.summarizedDosAndDonts && <DosAndDontsSummary summary={report.summarizedDosAndDonts} />}
     </div>
   );
 };
