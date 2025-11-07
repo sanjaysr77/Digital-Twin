@@ -5,6 +5,7 @@ import PrecautionsSummary from './components/PrecautionsSummary';
 import DosAndDontsSummary from './components/DosAndDontsSummary';
 import Chatbot from './components/Chatbot';
 import PatientCharts from './components/PatientCharts';
+import IntroVideo from './components/IntroVideo';
 
 interface ReportData {
   patientId: string;
@@ -231,6 +232,9 @@ const ReportPage: React.FC = () => {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6 text-center">Patient Report: {report.name}</h1>
+
+      {/* Intro video (autoplay, loop) */}
+      <IntroVideo src="/videos/intro.mp4" heightClass="h-80" objectPositionClass="object-top" />
 
       {report.overallSummary && <OverallSummary summary={report.overallSummary} />}
 
