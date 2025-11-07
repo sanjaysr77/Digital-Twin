@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import OverallSummary from './components/OverallSummary';
 import PrecautionsSummary from './components/PrecautionsSummary';
 import DosAndDontsSummary from './components/DosAndDontsSummary';
@@ -24,6 +24,7 @@ interface ReportData {
 const ReportPage: React.FC = () => {
   const { patientId: routePatientId } = useParams<{ patientId: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
   const queryPatientId = searchParams.get('patientId') || undefined;
   const patientId = routePatientId || queryPatientId;
@@ -45,6 +46,9 @@ const ReportPage: React.FC = () => {
         console.log('Fetched data:', data);
         const patientReport = data.reports.find(r => r.patientId === patientId);
         setReport(patientReport || null);
+        if (patientId) {
+          localStorage.setItem('patientId', patientId);
+        }
       } catch (e: any) {
         console.error('Fetch error:', e);
         setError(e.message);
@@ -55,6 +59,13 @@ const ReportPage: React.FC = () => {
 
     if (patientId) {
       fetchReport();
+    } else {
+      const stored = localStorage.getItem('patientId');
+      if (stored) {
+        navigate(`/reports/${encodeURIComponent(stored)}`, { replace: true });
+      } else {
+        navigate('/login', { replace: true });
+      }
     }
   }, [patientId]);
 
@@ -69,13 +80,7 @@ const ReportPage: React.FC = () => {
   }
 
   if (!patientId) {
-    return (
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-semibold mb-4">Reports</h1>
-        <p className="mb-2">No patient selected.</p>
-        <p className="text-sm text-gray-600">Provide a patientId in the URL like <code>/reports/123</code> or <code>/reports?patientId=123</code>.</p>
-      </div>
-    );
+    return null;
   }
 
   if (!report) {
